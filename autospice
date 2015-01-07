@@ -1,0 +1,19 @@
+#!/bin/bash
+#Try to grab the name from STDIN so things like "pwd | autospice" work
+read -t 1 dir
+if [ ! $dir ]
+then
+	#Next option is the command line argument "autospice ~/dirname/right_here"
+	if [ $1 ]
+	then
+		dir=$1
+	else
+		#If all else fails, try the current directory
+		dir=$(pwd)
+	fi
+fi
+#Read from specs.csv to set up the spi files
+./autospice_generator $dir
+#Grab the number of tests the generator made and perform them all
+./autospice_operate $dir -r $(cat "$dir/range_log")
+rm $dir/range_log

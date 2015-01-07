@@ -1,0 +1,40 @@
+#!/usr/bin/ruby -w
+#Get the working directory
+dir=ARGV.shift
+dirpath="#{dir}/results/"
+#Can be used as a general array substitution, but in this file we only ever need units
+def asub(s,patterns=["m","u","n","p","f"],replacements=["E-03","E-06","E-09","E-12","E-15"])
+	patterns.each_index do |i|
+		if patterns[i] and replacements[i]
+			s.gsub!(patterns[i],replacements[i])
+		end
+	end
+	return s
+end
+n=ARGV.shift 
+#Read test parameters
+File.open("#{dirpath}#{n}.lis") do |file|
+	#This part is a bit hard-coded. It might be better to look for pairs of numbers, but instead we look
+	#for a few typical labels and toss everything until then
+	until line=file.gets and (line=~/\s+volt\s+current/ or line=~/\s+amps\s+voltage/) or not line
+		false
+	end
+	#Throw away the spacer
+	file.gets
+	File.open("#{dirpath}#{n}.csv","w") do |outfile|
+		#For some reason these things end in a y. I don't kow y
+		until line=file.gets and line=~/y/ or not line
+			if line
+				line.split(" ").each do |item|
+					#There are actually a whole bunch of spaces, so we have to toss the
+					#Empty strings between them
+					if item!=""
+						#asub translates the units to scientific notation
+						outfile<< asub(item) + ","
+					end
+				end
+			end
+			outfile<< "\n"
+		end
+	end
+end

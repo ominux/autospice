@@ -1,0 +1,89 @@
+#!/usr/bin/ruby -w
+
+#Set up the paths based on the supplied directory
+dir=ARGV.shift
+testpath="#{dir}/tests/"
+samplepath="#{dir}/sample.spi"
+outpath="#{dir}/results/"
+specpath="#{dir}/specs.csv"
+#Matrix for test parameters
+tests=[]
+#Array for mathcing index numbers to text names (i.e., index 2 might be **VSUB**)
+param_order=[]
+param_count=0
+#Used later, general method for replacing everything in an array "patterns" with the item at the same index in another
+#array "replacements"
+def asub(s,patterns,replacements)
+	patterns.each_index do |i|
+		if patterns[i] and replacements[i]
+			s.gsub!("**"+patterns[i]+"**",replacements[i])
+		end
+	end
+	#Make sure the user didn't forget any parameters in specs.csv
+	patterns.each do |p|
+		if s.include? "**"+p+"**"
+			return false
+		end
+	end
+	return s
+end
+#Read test parameters
+File.open(specpath) do |file|
+	line=file.gets
+	line.split(",").each do |item|
+		#Create a new column in the array for this parameter
+		tests[param_count]=Array.new
+		#Associate the parameter name with an index in the array
+		param_order[param_count]=item.chomp
+		param_count+=1
+	end
+	#Start filling in the parameter matrix
+	while line=file.gets
+		count=0
+		line.split(",").each do |item|
+				tests[count].push(item.chomp)
+				count+=1
+		end
+	end
+end
+#Get rid of any old tests
+system "rm #{dir}/tests/*"
+max_index=0
+#Iterate over the indices, since they're common between tests and param_order
+tests[0].each_index do |i|
+	outfile=File.open(testpath+"#{i}.spi","w")
+	#Run a function to replace the **X** values in the sample file with the specs.csv parameters
+	#If it fails, delete that test file
+	if proc {
+		File.open(samplepath) do |file|
+			#Innocent until proven guilt
+			success=true;
+			while line=file.gets
+				#Gather the current value of each parameter
+				vals=[]
+				tests.each do |row|
+					vals.push(row[i])
+				end
+				if out=asub(line,param_order,vals)
+					outfile<< out
+				else
+					#Guilty. asub returned an error in the substitution
+					success=false
+					break
+				end
+			end
+			outfile.close
+			#Return
+			success
+		end
+	}.call
+		system "echo 'Generated #{i} #{tests[0][i]}'"
+		max_index=i;
+	else
+		#Use -f in case the file handle is still open, and silence the output because it's messy
+		system "rm -f tests/#{i}.spi > /dev/null"
+		break
+	end
+end
+#Store the range of indicies in that file.
+exec "echo '0 #{max_index}' > #{dir}/range_log"

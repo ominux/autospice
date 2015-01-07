@@ -1,0 +1,28 @@
+#!/bin/bash
+#Get the working directory
+dir=$1
+shift
+#If we get the -r flag, we're looking at a range (i.e., autospice_operate -r 0 100)
+if [ $1 == "-r" ]
+then
+	#Iterate through the range and operate on each
+	i=$2
+	while [ $i -le $3 ]
+	do
+		./autospice_operate $dir $i
+		i=$[ $i + 1 ]
+	done
+	echo -e "\n\n\nMerging..."
+	./autospice_merger $dir $2 $3
+else
+	#Operate on as many as we like (i.e., autospice_operate 1 2 3 4 5)
+	while [ $1 ]
+	do
+		echo "Running $1"
+		#The really important part
+		hspice -i $dir/tests/$1.spi -o $dir/results/$1.lis
+		#Get everything to a lovely .csv
+		./autospice_parser $dir $1
+		shift
+	done
+fi

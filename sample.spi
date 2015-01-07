@@ -1,0 +1,33 @@
+**Sample deck for simulating SPICE Models (Including UMC 28nm 2.5V I/O devices)
+
+**Include model library files
+**Nominal
+.include '/$AcSite/mirror/CADP/sim_models/umc_28nm/include_nom.inc'
+**SS
+*.include '/$AcSite/mirror/CADP/sim_models/umc_28nm/include_SS.inc'
+**FF
+*.include '/$AcSite/mirror/CADP/sim_models/umc_28nm/include_FF.inc'
+**SNFP
+*.include '/$AcSite/mirror/CADP/sim_models/umc_28nm/include_SNFP.inc'
+**FNSP
+*.include '/$AcSite/mirror/CADP/sim_models/umc_28nm/include_FNSP.inc'
+
+**Set simulation temperature (Celcius)
+.temp **TEMP**
+
+**Instantiate model (Ex: nmos = n_2p5_hlp, pmos = p_2p5_hlp)
+xm0 **SWEEPNODE** vg vs vsub **DEVICE** w=**WIDTH** l=**LENGTH** sa=**SA** sb=**SB** sd=**SD** m=**FINGERS**
+
+**Set static nodes
+**SWEEPNODE** **SWEEPNODE** GND dc **DBASE**
+vg vg GND ac **VG**
+vs vs GND dc **VS**
+vsub vsub GND dc **VSUB**
+
+**Set DC sweep
+.dc **SWEEPNODE** **SWEEPFROM** **SWEEPTO** **SWEEPSTEP**
+
+**Print drain current
+.print **MEAS**
+
+.END

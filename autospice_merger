@@ -1,0 +1,78 @@
+#!/usr/bin/ruby -w
+#Get the working directory
+dir=ARGV.shift
+dirpath="#{dir}/results/"
+specpath="#{dir}/specs.csv"
+#first is used to keep track of the first file currently in line
+first=ARGV.shift.to_i
+#i is used to match indices with test names
+i=first
+#save_first is used to tell how far first has moved from the original first file
+save_first=first
+last=ARGV.shift.to_i
+outfile=File.open("#{dirpath}merged.csv","w")
+#Stores file handles for the different data files
+files=[]
+#Match indicies to test names
+indices=[]
+imark=0
+nmark=0
+File.open(specpath) do |file|
+	#The first line has all the labels
+	line=file.gets
+	#If it's possible to match indices to names, do it
+	if line.include? "INDEX" and line.include? "NAME"
+		parts=line.chomp.split(",")
+		imark=parts.index("INDEX")
+		nmark=parts.index("NAME")
+		while line=file.gets
+			parts=line.chomp.split(",")
+			indices[parts[imark].to_i]=parts[nmark]
+		end
+	end
+end
+#Open all the files handles and write the test names or indices
+while i <= last
+	files[i]=File.open("#{dirpath}#{i}.csv")
+	if indices[i]
+		outfile<< "#{indices[i]},,"
+	else
+		outfile<< "#{i},,"
+	end
+	i+=1
+end
+outfile<< "\n"
+i=first
+#Write some hard-coded labels
+while i <= last
+	if indices[i]
+		outfile<< "Independant,Dependant,"
+	end
+	i+=1
+end
+outfile<< "\n"
+#first will increase when the file at that index runs out of data
+while first <= last
+	#If first has increased, fill the column for that file with blank spaces so the data lines up properly
+	(first-save_first).times do
+		outfile<< ",,"
+	end
+	#Read until the current first file runs out of data
+	until not line=files[first].gets
+		outfile<< line.chomp
+		i=first+1
+		#Iterate through the file handles
+		while i <= last
+			#If there's data, print it. If not, pad the column
+			if line=files[i].gets and line
+				outfile<< line.chomp
+			else
+				outfile<< ",,"
+			end
+			i+=1
+		end
+		outfile<< "\n"
+	end
+	first+=1
+end
+
