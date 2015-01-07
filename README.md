@@ -1,0 +1,2 @@
+# autospice
+Automated hspice simulations
